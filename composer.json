@@ -1,6 +1,8 @@
 {
     "name": "winternet-studio/odoo-jsonrpc-client",
     "description": "A simple Odoo JSON-RPC client you can understand",
+    "type": "library",
+    "keywords": ["odoo","php","api","json-rpc"],
     "license": "MIT",
     "authors": [
         {
@@ -8,7 +10,6 @@
             "email": "info@winternet.no"
         }
     ],
-    "minimum-stability": "dev",
     "require": {
         "guzzlehttp/guzzle": "^7.0"
     },
