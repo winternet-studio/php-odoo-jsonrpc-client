@@ -27,8 +27,8 @@ class JsonRpcClient {
 
 	public function postRequest(string $service, string $method, array $arguments) {
 		try {
-			$method = 'POST';
-			$endpoint = 'jsonrpc';
+			$httpMethod = 'POST';
+			$endpoint = '/jsonrpc';
 			$payload = [
 				'json' => [
 					'jsonrpc' => '2.0',
@@ -41,22 +41,36 @@ class JsonRpcClient {
 					'id' => rand(0, 1000000000),
 				],
 			];
+
 			if ($this->isDebug) {
-				$this->debugLogging('HTTP Request', [
-					'url' => $method .' '. $this->client->getConfig()->get('base_uri') . $endpoint,
-					'body' => $payload,
+				$logPayload = $payload;
+				if (isset($logPayload['json']['params']['args'][1]) && $logPayload['json']['params']['args'][1] == $this->username) {
+					$logPayload['json']['params']['args'][1] = '...USERNAME...';
+				}
+				if (isset($logPayload['json']['params']['args'][2]) && $logPayload['json']['params']['args'][2] == $this->password) {
+					$logPayload['json']['params']['args'][2] = '...PW...';
+				}
+				$this->debugLogging('REQUEST', [
+					'url' => $httpMethod .' '. (string) $this->client->getConfig()['base_uri'] . $endpoint,
+					'body' => $logPayload,
 				]);
 			}
-			$response = $this->client->request($method, $endpoint, $payload);
+
+			$response = $this->client->request($httpMethod, $endpoint, $payload);
 		} catch (\GuzzleHttp\Exception $e) {
 			throw new \Exception($e);
 		}
 		$this->lastResponse = $response;
+
 		if ($this->isDebug) {
-			$this->debugLogging('HTTP Response', [
+			$body = (string) $response->getBody();
+			$bodyDecoded = json_decode($body);
+			$this->debugLogging('RESPONSE', [
 				'httpStatus' => $response->getStatusCode(),
-				'headers' => $response->getHeaders(),
-				'body' => (string) $response->getBody(),
+				'headers' => array_map(function($item) {
+					return implode(' ', $item);
+				}, $response->getHeaders()),
+				'body' => ($bodyDecoded !== null ? $bodyDecoded : $body),
 			]);
 		}
 
@@ -94,7 +108,7 @@ class JsonRpcClient {
 	}
 
 	public function debugLogging($name, $data) {
-		error_log('Odoo debug: '. $name .':'. (is_string($data) ? $data : json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES)));
+		error_log(static::class .' debug: '. $name .':'. (is_string($data) ? ' '. $data : PHP_EOL . json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_SLASHES)));
 	}
 
 	public function authenticate() {
@@ -108,8 +122,15 @@ class JsonRpcClient {
 		);
 	}
 
-	public function version() {
-		return $this->postRequest('common', 'version', []);
+	public function version($format = 'major') {
+		$version = $this->postRequest('common', 'version', []);
+		if ($format == 'major') {
+			return $version->server_version_info[0];
+		} elseif ($format == 'full') {
+			return $version->server_version;
+		} else {
+			return $version;  //return raw result
+		}
 	}
 
 	public function execute($model, $method, $args) {
