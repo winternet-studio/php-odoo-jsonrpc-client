@@ -2,6 +2,8 @@
 namespace winternet\odoo;
 
 class JsonRpcClient {
+	use \winternet\odoo\traits\CurrencyTrait;
+
 	public $database;
 	public $username;
 	public $password;
@@ -125,7 +127,7 @@ class JsonRpcClient {
 	public function version($format = 'major') {
 		$version = $this->postRequest('common', 'version', []);
 		if ($format == 'major') {
-			return $version->server_version_info[0];
+			return (int) $version->server_version_info[0];
 		} elseif ($format == 'full') {
 			return $version->server_version;
 		} else {
@@ -133,7 +135,11 @@ class JsonRpcClient {
 		}
 	}
 
-	public function execute($model, $method, $args) {
+	/**
+	 * @param array $options : Available options:
+	 *   - `indexBy` : field name to index the returned array by
+	 */
+	public function execute($model, $method, $args, $options = []) {
 		$newArgs = [
 			$this->database,
 			$this->uid,
@@ -142,7 +148,18 @@ class JsonRpcClient {
 			$method,
 		];
 		array_push($newArgs, ...$args);
-		return $this->postRequest('object', 'execute', $newArgs);
+
+		$result = $this->postRequest('object', 'execute', $newArgs);
+
+		if (empty($options['indexBy'])) {
+			return $result;
+		} else {
+			$new = [];
+			foreach ($result as $row) {
+				$new[ $row->{ $options['indexBy'] } ] = $row;
+			}
+			return $new;
+		}
 	}
 
 	/**
@@ -158,29 +175,35 @@ class JsonRpcClient {
 	 *  - `offset` : numeric, eg. `0`
 	 *  - `limit` : numeric, eg. `20`
 	 *  - `order` : Eg. `'name'` or `'name DESC'`
+	 *
+	 * @param array $options : Available options:
+	 *   - `indexBy` : field name to index the returned array by
 	 */
-	public function searchRead($model, $args) {
+	public function searchRead($model, $args = [], $options = []) {
 		return $this->execute($model, 'search_read', [
 			(isset($args['domain']) ? $args['domain'] : $args['where']),  //make `where` an alias for `domain`
 			$args['fields'],
 			$args['offset'],
 			$args['limit'],
 			$args['order'],
-		]);
+		], $options);
 		// Order of arguments for the different methods: https://www.cybrosys.com/odoo/odoo-books/odoo-15-development/ch14/json-rpc/
 	}
 
 	/**
 	 * @param array $IDs : record IDs to read
+	 * @param array $options : Available options:
+	 *   - `indexBy` : field name to index the returned array by
 	 */
-	public function read($model, $IDs, $fields = []) {
+	public function read($model, $IDs, $fields = [], $options = []) {
 		return $this->execute($model, 'read', [
 			$IDs,
 			$fields,
-		]);
+		], $options);
 	}
 
 	/**
+	 * @param string $model : name of model, eg. `account.move`
 	 * @param array $fields : associative array with fieldname/value pairs, eg. `['date' => '2023-11-03', 'partner_id' => 6060, ...]`
 	 */
 	public function create($model, $fields) {
@@ -190,7 +213,8 @@ class JsonRpcClient {
 	}
 
 	/**
-	 * @param array $fields : array of fields to return eg. `['date', 'partner_id']`
+	 * @param string $model : name of model, eg. `account.move`
+	 * @param array $fields : associative array with fieldname/value pairs, eg. `['date' => '2023-11-03', 'partner_id' => 6060, ...]`
 	 */
 	public function update($model, $recordID, $fields) {
 		return $this->execute($model, 'write', [
@@ -200,6 +224,7 @@ class JsonRpcClient {
 	}
 
 	/**
+	 * @param string $model : name of model, eg. `account.move`
 	 * @param array $IDs : record IDs to delete
 	 */
 	public function delete($model, $IDs) {
@@ -209,5 +234,18 @@ class JsonRpcClient {
 	}
 
 	// Can we use more of these methods? https://www.cybrosys.com/blog/orm-methods-in-odoo-15
+
+	/**
+	 * Change the active company
+	 */
+	public function changeActiveCompany($companyID, $userID = null) {
+		$this->authenticate();
+
+		if (!$userID) {
+			$userID = $this->uid;
+		}
+
+		return $this->update('res.users', $userID, ['company_id' => $companyID]);
+	}
 
 }

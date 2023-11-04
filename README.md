@@ -43,7 +43,7 @@ echo $client->version('major');
 $userID = $client->authenticate();
 ```
 
-Continue with examples below.
+Continue with examples below and see the documentation for each method in the JsonRpcClient class file itself.
 
 
 ## Examples
@@ -325,4 +325,20 @@ $createdInvoice = $client->create('account.move', [
 	// 'activity_ids' => [],
 	// 'message_ids' => [],
 ]);
+```
+
+### Get currencies
+
+Get currencies, with array index values being the currency code.
+
+```php
+$currencies = $client->searchRead('res.currency', [], ['indexBy' => 'name']);
+```
+
+### Update currencies with today's rates
+
+Update rates with data from European Central Bank.
+
+```php
+$client->updateExchangeRates();
 ```
