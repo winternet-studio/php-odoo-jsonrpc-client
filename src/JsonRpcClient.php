@@ -193,11 +193,12 @@ class JsonRpcClient {
 	}
 
 	/**
-	 * @param array $IDs : record IDs to read
+	 * @param array|integer $IDs : array of record IDs to read or single ID (integer) to read
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 */
 	public function read($model, $IDs, $fields = [], $options = []) {
+		if (!is_array($IDs)) $IDs = [$IDs];
 		return $this->execute($model, 'read', [
 			$IDs,
 			$fields,
@@ -227,9 +228,10 @@ class JsonRpcClient {
 
 	/**
 	 * @param string $model : name of model, eg. `account.move`
-	 * @param array $IDs : record IDs to delete
+	 * @param array|integer $IDs : array of record IDs to delete or single ID (integer) to delete
 	 */
 	public function delete($model, $IDs) {
+		if (!is_array($IDs)) $IDs = [$IDs];
 		return $this->execute($model, 'unlink', [
 			$IDs,
 		]);
@@ -241,11 +243,12 @@ class JsonRpcClient {
 	 * Post a record that is currently a draft
 	 *
 	 * @param string $model : name of model, eg. `account.move`
-	 * @param array $IDs : record IDs to post
+	 * @param array|integer $IDs : array of record IDs to post or single ID (integer) to post
 	 * @throws Exception on failure, eg. if record(s) are already posted
 	 * @return null
 	 */
 	public function actionPost($model, $IDs) {
+		if (!is_array($IDs)) $IDs = [$IDs];
 		return $this->execute($model, 'action_post', [
 			$IDs,
 		]);
