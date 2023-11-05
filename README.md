@@ -36,11 +36,11 @@ $baseUri = 'https://yourodooserver.com';
 $database = 'databaseName';
 $username = 'johndoe@sample.com';
 $password = 'mypassword';
-$client = new \winternet\odoo\JsonRpcClient($baseUri, $database, $username, $password);
+$odoo = new \winternet\odoo\JsonRpcClient($baseUri, $database, $username, $password);
 
-echo $client->version('major');
+echo $odoo->version('major');
 
-$userID = $client->authenticate();
+$userID = $odoo->authenticate();
 ```
 
 Continue with examples below and see the documentation for each method in the JsonRpcClient class file itself.
@@ -59,7 +59,7 @@ Depending of Odoo version the fields might differ. These examples work for v14.
 ```php
 $recordIDs = [74049];
 $fields = ['name', 'create_date', 'amount_total_signed'];
-$invoices = $client->read('account.move', $recordIDs, $fields);
+$invoices = $odoo->read('account.move', $recordIDs, $fields);
 ```
 
 ### Post a record that is currently a draft
@@ -68,13 +68,13 @@ Eg. post a payment (`account.payment`) or invoice (`account.move`).
 
 ```php
 $recordIDs = [17113];
-$client->actionPost('account.payment', $recordIDs);
+$odoo->actionPost('account.payment', $recordIDs);
 ```
 
 ### Get invoices
 
 ```php
-$invoices = $client->searchRead('account.move', [
+$invoices = $odoo->searchRead('account.move', [
 	'where' => [
 		[
 			'move_type',
@@ -95,7 +95,7 @@ It is created as a draft and must be posted using the `actionPost()` method as i
 Seems not possible to post it at the same time as creating it.
 
 ```php
-$createdInvoice = $client->create('account.move', [
+$createdInvoice = $odoo->create('account.move', [
 	'move_type' => 'out_invoice',
 	'date' => '2023-10-31',
 	// 'show_name_warning' => false,
@@ -343,7 +343,7 @@ $createdInvoice = $client->create('account.move', [
 ### Create payment
 
 ```php
-$payment_id = $client->create('account.payment', [
+$payment_id = $odoo->create('account.payment', [
 	// 'name' => false,
 	'payment_type' => 'inbound',
 	'partner_type' => 'customer',
@@ -370,7 +370,7 @@ $payment_id = $client->create('account.payment', [
 Get currencies, with array index values being the currency code.
 
 ```php
-$currencies = $client->searchRead('res.currency', [], ['indexBy' => 'name']);
+$currencies = $odoo->searchRead('res.currency', [], ['indexBy' => 'name']);
 ```
 
 ### Update currencies with today's rates
@@ -378,5 +378,5 @@ $currencies = $client->searchRead('res.currency', [], ['indexBy' => 'name']);
 Update rates with data from European Central Bank.
 
 ```php
-$client->updateExchangeRates();
+$odoo->updateExchangeRates();
 ```
