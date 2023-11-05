@@ -54,6 +54,18 @@ makes when navigating the Odoo system. Open the developer tools and look at the 
 Depending of Odoo version the fields might differ. These examples work for v14.
 
 
+### Get all models
+
+```php
+$models = $odoo->searchRead('ir.model', ['fields' => ['id', 'model', 'name']]);
+```
+
+### Get all fields for a model
+
+```php
+$fields = $odoo->fieldsGet('account.move');
+```
+
 ### Get records by ID
 
 ```php

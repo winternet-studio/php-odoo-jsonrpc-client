@@ -254,6 +254,10 @@ class JsonRpcClient {
 		]);
 	}
 
+	public function fieldsGet($model) {
+		return $this->execute($model, 'fields_get', []);
+	}
+
 	/**
 	 * Change the active company
 	 */
