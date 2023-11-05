@@ -156,6 +156,7 @@ class JsonRpcClient {
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
 	 */
 	public function execute($model, $method, $args, $options = []) {
 		$newArgs = [
@@ -168,6 +169,19 @@ class JsonRpcClient {
 		array_push($newArgs, ...$args);
 
 		$result = $this->postRequest('object', 'execute', $newArgs);
+
+		if (!empty($options['expandFields'])) {
+			foreach ($result as &$row) {
+				foreach ($options['expandFields'] as $fieldToExpand => $expandParams) {
+					if (is_array($row->$fieldToExpand) && !empty($row->$fieldToExpand)) {  //look for an array of IDs
+						if (!property_exists($row, '_expanded')) {
+							$row->_expanded = (object) [];
+						}
+						$row->_expanded->$fieldToExpand = $this->read($expandParams['model'], $row->$fieldToExpand);
+					}
+				}
+			}
+		}
 
 		if (!empty($options['single'])) {
 			if (empty($result)) {
@@ -209,6 +223,7 @@ class JsonRpcClient {
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
 	 */
 	public function searchRead($model, $args = [], $options = []) {
 		if (empty($args)) $args = [];
@@ -225,12 +240,15 @@ class JsonRpcClient {
 
 	/**
 	 * @param array|integer $IDs : array of record IDs to read or single ID (integer) to read
+	 * @param array $fields : if set, the result will only include these fields
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
 	 */
 	public function read($model, $IDs, $fields = [], $options = []) {
 		if (!is_array($IDs)) $IDs = [$IDs];
+		if (!is_array($fields)) $fields = [];
 		return $this->execute($model, 'read', [
 			$IDs,
 			$fields,

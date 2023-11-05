@@ -69,9 +69,13 @@ $fields = $odoo->fieldsGet('account.move');
 ### Get records by ID
 
 ```php
-$recordIDs = [74049];
+$recordIDs = [74049, 74590];
 $fields = ['name', 'create_date', 'amount_total_signed'];
 $invoices = $odoo->read('account.move', $recordIDs, $fields);
+
+$recordID = 75098;
+$invoice = $odoo->read('account.move', $recordID, [], ['single' => true]);  // return a single record or null if it isn't found
+$invoice = $odoo->read('account.move', $recordID, [], ['single' => 'require']);  // return a single record or throw exception if it isn't found
 ```
 
 ### Post a record that is currently a draft
@@ -96,6 +100,8 @@ $invoices = $odoo->searchRead('account.move', [
 	],
 	'limit' => 3,
 	'fields' => ['name', 'create_date', 'amount_total_signed'],
+], [
+	// 'expandFields' => ['invoice_line_ids' => ['model' => 'account.move.line']],  //enable this line to include invoice lines - see expandFields in execute() method in JsonRpcClient class file
 ]);
 ```
 
