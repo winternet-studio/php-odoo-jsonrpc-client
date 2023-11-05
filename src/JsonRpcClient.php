@@ -25,6 +25,11 @@ class JsonRpcClient {
 			],
 			'base_uri' => $baseUri,
 		]);
+
+		// Automatically attempt to authenticate
+		if ($this->username && $this->password) {
+			$this->authenticate();
+		}
 	}
 
 	public function postRequest(string $service, string $method, array $arguments) {
