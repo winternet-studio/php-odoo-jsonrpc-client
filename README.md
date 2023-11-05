@@ -48,8 +48,11 @@ Continue with examples below and see the documentation for each method in the Js
 
 ## Examples
 
-A very useful way of figuring out the possible requests and fields is to look at the requests the browser
+A very useful way of figuring out the possible requests, methods, fields and possible values is to look at the requests the browser
 makes when navigating the Odoo system. Open the developer tools and look at the Network requests.
+
+Depending of Odoo version the fields might differ. These examples work for v14.
+
 
 ### Get records by ID
 
@@ -57,6 +60,15 @@ makes when navigating the Odoo system. Open the developer tools and look at the 
 $recordIDs = [74049];
 $fields = ['name', 'create_date', 'amount_total_signed'];
 $invoices = $client->read('account.move', $recordIDs, $fields);
+```
+
+### Post a record that is currently a draft
+
+Eg. post a payment (`account.payment`) or invoice (`account.move`).
+
+```php
+$recordIDs = [17113];
+$client->actionPost('account.payment', $recordIDs);
 ```
 
 ### Get invoices
@@ -77,9 +89,10 @@ $invoices = $client->searchRead('account.move', [
 
 ### Create invoice
 
-Depending of Odoo version the fields might differ. This example works for v14.
-
 This invoice example is originally a copy from the network request in the browser.
+
+It is created as a draft and must be posted using the `actionPost()` method as in the example above.
+Seems not possible to post it at the same time as creating it.
 
 ```php
 $createdInvoice = $client->create('account.move', [
@@ -97,7 +110,7 @@ $createdInvoice = $client->create('account.move', [
 	// 'invoice_vendor_bill_id' => false,
 	'invoice_date' => '2023-10-31',
 	'invoice_date_due' => '2023-11-07',
-	'invoice_payment_term_id' => 26,  //ADJUST TO YOUR INSTANCE
+	'invoice_payment_term_id' => 26,  //ADJUST TO YOUR INSTANCE. Set to false for no payment term, eg. if setting a date instead.
 	'journal_id' => 136,  //ADJUST TO YOUR INSTANCE
 	'currency_id' => 3,  //ADJUST TO YOUR INSTANCE
 	'invoice_line_ids' => [
@@ -316,11 +329,36 @@ $createdInvoice = $client->create('account.move', [
 	// 'fiscal_position_id' => false,
 	// 'invoice_cash_rounding_id' => false,
 	// 'invoice_source_email' => false,
-	'auto_post' => false,  //don't know if this is needed - or if it defaults to true.....?!
+	// 'auto_post' => false,  //schedule the record to be automatically posted on the invoice date? Defaults to false
 	// 'to_check' => false,
 	// 'campaign_id' => false,
 	// 'medium_id' => false,
 	// 'source_id' => false,
+	// 'message_follower_ids' => [],
+	// 'activity_ids' => [],
+	// 'message_ids' => [],
+]);
+```
+
+### Create payment
+
+```php
+$payment_id = $client->create('account.payment', [
+	// 'name' => false,
+	'payment_type' => 'inbound',
+	'partner_type' => 'customer',
+	'partner_id' => 6197,
+	// 'destination_account_id' => 560,
+	// 'is_internal_transfer' => false,
+	'company_id' => 4,
+	'journal_id' => 22,
+	'payment_method_id' => 3,
+	// 'payment_token_id' => false,
+	// 'partner_bank_id' => false,
+	'amount' => 100,
+	'currency_id' => 15,
+	'date' => '2023-11-05',
+	// 'ref' => false,
 	// 'message_follower_ids' => [],
 	// 'activity_ids' => [],
 	// 'message_ids' => [],

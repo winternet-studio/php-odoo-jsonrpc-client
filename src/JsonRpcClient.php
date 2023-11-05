@@ -180,6 +180,8 @@ class JsonRpcClient {
 	 *   - `indexBy` : field name to index the returned array by
 	 */
 	public function searchRead($model, $args = [], $options = []) {
+		if (empty($args)) $args = [];
+
 		return $this->execute($model, 'search_read', [
 			(isset($args['domain']) ? $args['domain'] : $args['where']),  //make `where` an alias for `domain`
 			$args['fields'],
@@ -234,6 +236,20 @@ class JsonRpcClient {
 	}
 
 	// Can we use more of these methods? https://www.cybrosys.com/blog/orm-methods-in-odoo-15
+
+	/**
+	 * Post a record that is currently a draft
+	 *
+	 * @param string $model : name of model, eg. `account.move`
+	 * @param array $IDs : record IDs to post
+	 * @throws Exception on failure, eg. if record(s) are already posted
+	 * @return null
+	 */
+	public function actionPost($model, $IDs) {
+		return $this->execute($model, 'action_post', [
+			$IDs,
+		]);
+	}
 
 	/**
 	 * Change the active company
