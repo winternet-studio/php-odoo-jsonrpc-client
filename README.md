@@ -12,19 +12,9 @@ It's currently a work in progress. Feel free to help by doing pull requests.
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
 
-Either run
-
 ```
 composer require winternet-studio/odoo-jsonrpc-client
 ```
-
-or add
-
-```
-"winternet-studio/odoo-jsonrpc-client": "^1.0"
-```
-
-to the require section of your `composer.json` file.
 
 
 ## Usage
