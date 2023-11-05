@@ -60,7 +60,7 @@ class JsonRpcClient {
 
 			$response = $this->client->request($httpMethod, $endpoint, $payload);
 		} catch (\GuzzleHttp\Exception $e) {
-			throw new \Exception($e);
+			$this->error('Guzzle HTTP request to Odoo failed: '. $e->getMessage(), ['GuzzleHttp\Exception' => $e]);
 		}
 		$this->lastResponse = $response;
 
@@ -84,7 +84,7 @@ class JsonRpcClient {
 
 			return $responseData;
 		} else {
-			throw new \Exception($response);
+			$this->error($response);
 		}
 	}
 
@@ -104,13 +104,25 @@ class JsonRpcClient {
 			}
 			// $response
 			// $json->error->code
-			throw new \Exception($message);
+			$this->error($message);
 		}
 		return $json->result;
 	}
 
+	public function error($message, $internalInfo = []) {
+		$this->debugLogging($message, $internalInfo);
+		throw new \Exception($message);
+	}
+
 	public function debugLogging($name, $data) {
-		error_log(static::class .' debug: '. $name .':'. (is_string($data) ? ' '. $data : PHP_EOL . json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_SLASHES)));
+		$logString = static::class .' debug: '. $name .':'. (is_string($data) ? ' '. $data : PHP_EOL . json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_SLASHES));
+		$logFile = 'winternetOdooPhpJsonRpcClient.log';
+		touch($logFile);
+		if (is_writable($logFile)) {
+			file_put_contents($logFile, date('Y-m-d H:i:sO') ."\t". $logString . PHP_EOL, FILE_APPEND);  // use custom log in current working folder if possible
+		} else {
+			error_log($logString);  // use PHP's error log
+		}
 	}
 
 	public function authenticate() {
@@ -138,6 +150,7 @@ class JsonRpcClient {
 	/**
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
+	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
 	 */
 	public function execute($model, $method, $args, $options = []) {
 		$newArgs = [
@@ -150,6 +163,18 @@ class JsonRpcClient {
 		array_push($newArgs, ...$args);
 
 		$result = $this->postRequest('object', 'execute', $newArgs);
+
+		if (!empty($options['single'])) {
+			if (empty($result)) {
+				if ($options['single'] === 'require') {
+					$this->error('Single '. $model .' record not found.', $args);
+				} else {
+					return null;
+				}
+			} else {
+				return $result[0];
+			}
+		}
 
 		if (empty($options['indexBy'])) {
 			return $result;
@@ -178,6 +203,7 @@ class JsonRpcClient {
 	 *
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
+	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
 	 */
 	public function searchRead($model, $args = [], $options = []) {
 		if (empty($args)) $args = [];
@@ -196,6 +222,7 @@ class JsonRpcClient {
 	 * @param array|integer $IDs : array of record IDs to read or single ID (integer) to read
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
+	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
 	 */
 	public function read($model, $IDs, $fields = [], $options = []) {
 		if (!is_array($IDs)) $IDs = [$IDs];
