@@ -87,6 +87,11 @@ $invoices = $odoo->searchRead('account.move', [
 			'=',
 			'out_invoice',
 		],
+		[
+			'partner_id',
+			'=',
+			(int) $partner_id,  //must be an integer!!
+		],
 	],
 	'limit' => 3,
 	'fields' => ['name', 'create_date', 'amount_total_signed'],
@@ -351,7 +356,7 @@ $createdInvoice = $odoo->create('account.move', [
 ### Create payment
 
 ```php
-$payment_id = $odoo->create('account.payment', [
+$paymentID = $odoo->create('account.payment', [
 	// 'name' => false,
 	'payment_type' => 'inbound',
 	'partner_type' => 'customer',
