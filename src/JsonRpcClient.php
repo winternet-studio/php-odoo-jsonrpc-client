@@ -229,11 +229,11 @@ class JsonRpcClient {
 		if (empty($args)) $args = [];
 
 		return $this->execute($model, 'search_read', [
-			(isset($args['domain']) ? $args['domain'] : $args['where']),  //make `where` an alias for `domain`
-			$args['fields'],
-			$args['offset'],
-			$args['limit'],
-			$args['order'],
+			(isset($args['domain']) ? $args['domain'] : @$args['where']),  //make `where` an alias for `domain`
+			@$args['fields'],
+			@$args['offset'],
+			@$args['limit'],
+			@$args['order'],
 		], $options);
 		// Order of arguments for the different methods: https://www.cybrosys.com/odoo/odoo-books/odoo-15-development/ch14/json-rpc/
 	}
