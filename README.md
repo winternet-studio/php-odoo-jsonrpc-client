@@ -38,6 +38,8 @@ Continue with examples below and see the documentation for each method in the Js
 
 ## Examples
 
+These examples are all for the `JsonRpcClient` even though there is now also a `RestClient`.
+
 A very useful way of figuring out the possible requests, methods, fields and possible values is to look at the requests the browser
 makes when navigating the Odoo system. Open the developer tools and look at the Network requests.
 
