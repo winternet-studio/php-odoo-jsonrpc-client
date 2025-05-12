@@ -47,6 +47,8 @@ $filters[] = ['date', '>=', '2025-01-01'];
 $filters[] = ['date', '<=', '2025-12-31'];
 $order = 'account_id, date DESC';
 $lines = $odoo->accounting->getMoveLines($filters, null, $order);
+
+$invoices = $odoo->accounting->getInvoices();
 ```
 
 Continue with examples below and see the documentation for each method in the JsonRpcClient class file itself.
@@ -109,7 +111,7 @@ $invoices = $odoo->searchRead('account.move', [
 		[
 			'partner_id',
 			'=',
-			(int) $partner_id,  //must be an integer!!
+			(int) $partner_id,  // IMPORTANT: IDs must be an integer!!
 		],
 	],
 	'limit' => 3,

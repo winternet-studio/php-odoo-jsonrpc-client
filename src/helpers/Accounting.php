@@ -13,21 +13,40 @@ class Accounting {
 		return $this->core->client->searchRead('account.account', [
 			'where' => [
 				['code', '=', $account],
-				['company_id', '=', $this->companyID],
+				['company_id', '=', (int) $this->core->companyID],
+			],
+		]);
+	}
+
+	public function getInvoices($where, $fields = null, $order = null, $limit = null, $offset = null) {
+		$where[] = ['move_type', '=', 'out_invoice'];
+		$where[] = ['company_id', '=', (int) $this->core->companyID];
+		return $this->core->client->searchRead('account.move', [
+			'where' => $where,
+			'fields' => $fields,
+			'offset' => $offset,
+			'limit' => $limit,
+			'order' => $order,
+		]);
+
+		return $this->core->client->searchRead('account.account', [
+			'where' => [
+				['code', '=', $account],
+				['company_id', '=', (int) $this->core->companyID],
 			],
 		]);
 	}
 
 	/**
-	 * @param array $filters : See https://github.com/winternet-studio/php-odoo-jsonrpc-client
+	 * @param array $where : See https://github.com/winternet-studio/php-odoo-jsonrpc-client
 	 * @param array $fields : See https://github.com/winternet-studio/php-odoo-jsonrpc-client
 	 * @param string $order : Eg. `account_id, date DESC`
 	 * @param integer $limit : Limit to this number of records
 	 * @param integer $offset
 	 */
-	public function getMoveLines($filters, $fields = null, $order = null, $limit = null, $offset = null) {
+	public function getMoveLines($where, $fields = null, $order = null, $limit = null, $offset = null) {
 		return $this->core->client->searchRead('account.move.line', [
-			'where' => $filters,
+			'where' => $where,
 			'fields' => $fields,
 			'offset' => $offset,
 			'limit' => $limit,

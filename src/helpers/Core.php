@@ -11,7 +11,7 @@ class Core {
 		public string $database, 
 		public string $user, 
 		public string $password,
-		public string $companyID,
+		public integer $companyID,
 	) {
 		$this->client = new \winternet\odoo\JsonRpcClient($this->url, $this->database, $this->user, $this->password);
 	}
