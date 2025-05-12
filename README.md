@@ -33,12 +33,29 @@ echo $odoo->version('major');
 $userID = $odoo->authenticate();
 ```
 
+Or to use the higher level helper classes:
+
+```php
+$companyID = 5;
+$odoo = new \winternet\odoo\helpers\Core($baseUri, $database, $username, $password, $companyID);
+$account = $odoo->accounting->getAccount($accountID);
+
+$filters = [];
+$filters[] = ['company_id', '=', $companyID];
+$filters[] = ['account_id', '=', 45805];
+$filters[] = ['date', '>=', '2025-01-01'];
+$filters[] = ['date', '<=', '2025-12-31'];
+$order = 'account_id, date DESC';
+$lines = $odoo->accounting->getMoveLines($filters, null, $order);
+```
+
 Continue with examples below and see the documentation for each method in the JsonRpcClient class file itself.
 
 
 ## Examples
 
 These examples are all for the `JsonRpcClient` even though there is now also a `RestClient`.
+Also, no examples are yet available for the higher level helper classes other than in Usage above. For now investigate the classes themselves.
 
 A very useful way of figuring out the possible requests, methods, fields and possible values is to look at the requests the browser
 makes when navigating the Odoo system. Open the developer tools and look at the Network requests.
