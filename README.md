@@ -89,6 +89,12 @@ $invoice = $odoo->read('account.move', $recordID, [], ['single' => true]);  // r
 $invoice = $odoo->read('account.move', $recordID, [], ['single' => 'require']);  // return a single record or throw exception if it isn't found
 ```
 
+### Update a record
+
+```php
+$odoo->update('res.partner', 3, ['name' => 'The New Name']);
+```
+
 ### Post a record that is currently a draft
 
 Eg. post a payment (`account.payment`) or invoice (`account.move`).
