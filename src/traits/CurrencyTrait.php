@@ -47,7 +47,7 @@ trait CurrencyTrait {
 					}
 
 					foreach ($currRates as $currRate) {
-						if ($newRates[$currRate->name]) {  //if we have a new exchange rate for this currency...
+						if (@$newRates[$currRate->name]) {  //if we have a new exchange rate for this currency...
 							if (!$currRate->date || strtotime($currRate->date) < strtotime($ratesDate) ) {
 								// Update rate when we have a newer one
 								$fields = [
