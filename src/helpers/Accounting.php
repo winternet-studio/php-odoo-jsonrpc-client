@@ -28,13 +28,6 @@ class Accounting {
 			'limit' => $limit,
 			'order' => $order,
 		]);
-
-		return $this->core->client->searchRead('account.account', [
-			'where' => [
-				['code', '=', $account],
-				['company_id', '=', (int) $this->core->companyID],
-			],
-		]);
 	}
 
 	/**

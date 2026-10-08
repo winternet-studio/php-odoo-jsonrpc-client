@@ -65,7 +65,7 @@ class RestClient {
 			}
 
 			$response = $this->client->request($httpMethod, $endpoint, $payload);
-		} catch (\GuzzleHttp\Exception $e) {
+		} catch (\GuzzleHttp\Exception\GuzzleException $e) {
 			$this->error('Guzzle REST HTTP request to Odoo failed: '. $e->getMessage(), ['GuzzleHttp\Exception' => $e]);
 		}
 		$this->lastResponse = $response;
@@ -86,7 +86,7 @@ class RestClient {
 			$responseData = $this->processResponse($response);
 			return $responseData;
 		} else {
-			$this->error($response);
+			$this->error('Odoo request failed with HTTP status '. $response->getStatusCode());
 		}
 	}
 
@@ -96,6 +96,9 @@ class RestClient {
 
 	private function processResponse($response) {
 		$json = json_decode($response->getBody());
+		if (!is_object($json)) {
+			$this->error('Invalid JSON-RPC response from Odoo.');
+		}
 		if (isset($json->error)) {
 			$message = 'Odoo Exception';
 			if (isset($json->error->message)) {
@@ -108,7 +111,7 @@ class RestClient {
 			// $json->error->code
 			$this->error($message);
 		}
-		return $json->result;
+		return $json->result ?? null;  // Odoo omits `result` when the method returns None
 	}
 
 	public function error($message, $internalInfo = []) {
@@ -119,7 +122,7 @@ class RestClient {
 	public function debugLogging($name, $data) {
 		$logString = static::class .' debug: '. $name .':'. (is_string($data) ? ' '. $data : PHP_EOL . json_encode($data, JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_SLASHES));
 		$logFile = 'winternetOdooPhpRestClient.log';
-		touch($logFile);
+		@touch($logFile);
 		if (is_writable($logFile)) {
 			file_put_contents($logFile, date('Y-m-d H:i:sO') ."\t". $logString . PHP_EOL, FILE_APPEND);  // use custom log in current working folder if possible
 		} else {
@@ -153,16 +156,16 @@ class RestClient {
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
-	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]`
 	 */
 	public function execute($endpoint, $args, $options = []) {
 
 		$result = $this->postRequest($endpoint, $args);
 
 		if (!empty($options['expandFields'])) {
-			foreach ($result as &$row) {
+			foreach ($result as $row) {
 				foreach ($options['expandFields'] as $fieldToExpand => $expandParams) {
-					if (is_array($row->$fieldToExpand) && !empty($row->$fieldToExpand)) {  //look for an array of IDs
+					if (!empty($row->$fieldToExpand) && is_array($row->$fieldToExpand)) {  //look for an array of IDs
 						if (!property_exists($row, '_expanded')) {
 							$row->_expanded = (object) [];
 						}
@@ -175,7 +178,7 @@ class RestClient {
 		if (!empty($options['single'])) {
 			if (empty($result)) {
 				if ($options['single'] === 'require') {
-					$this->error('Single '. $model .' record not found.', $args);
+					$this->error('Single record not found at '. $endpoint .'.', $args);
 				} else {
 					return null;
 				}
@@ -213,7 +216,7 @@ class RestClient {
 	 * @param array $options : Available options:
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
-	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]`
 	 */
 	public function searchRead($model, $args = [], $options = []) {
 		if (empty($args)) $args = [];
@@ -233,7 +236,7 @@ class RestClient {
 	 *   - `kwArgs` : array/object according to Odoo, eg. `['context' => ['lang' => 'nb_NO', 'tz' => 'Europe/Oslo']]`
 	 *   - `indexBy` : field name to index the returned array by
 	 *   - `single` : set true to return a single record, or null if nothing found. Or set string 'require' to throw Exception if nothing found
-	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]´
+	 *   - `expandFields` : Expand a field with an array of record IDs into a new property called `_expanded`. Eg. `['invoice_line_ids' => ['model' => 'account.move.line']]`
 	 */
 	public function read($model, $IDs, $fields = [], $options = []) {
 		if (!is_array($IDs)) $IDs = [$IDs];
@@ -312,15 +315,25 @@ class RestClient {
 	 * @throws Exception on failure, eg. if record(s) are already posted
 	 * @return null
 	 */
-	public function actionPost($model, $IDs) {
+	public function actionPost($model, $IDs, $options = []) {
 		if (!is_array($IDs)) $IDs = [$IDs];
-		return $this->execute($model, 'action_post', [
-			$IDs,
-		]);
+		return $this->execute('/web/dataset/call_kw/'. $model .'/action_post', [
+			'method' => 'action_post',
+			'model' => $model,
+			'args' => [
+				$IDs,
+			],
+			'kwargs' => (!empty($options['kwArgs']) ? $options['kwArgs'] : []),
+		], $options);
 	}
 
-	public function fieldsGet($model) {
-		return $this->execute($model, 'fields_get', []);
+	public function fieldsGet($model, $options = []) {
+		return $this->execute('/web/dataset/call_kw/'. $model .'/fields_get', [
+			'method' => 'fields_get',
+			'model' => $model,
+			'args' => [],
+			'kwargs' => (!empty($options['kwArgs']) ? $options['kwArgs'] : []),
+		], $options);
 	}
 
 	/**

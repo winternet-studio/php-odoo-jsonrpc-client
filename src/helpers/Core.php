@@ -11,7 +11,7 @@ class Core {
 		public string $database, 
 		public string $user, 
 		public string $password,
-		public integer $companyID,
+		public int $companyID,
 	) {
 		$this->client = new \winternet\odoo\JsonRpcClient($this->url, $this->database, $this->user, $this->password);
 	}
@@ -30,10 +30,10 @@ class Core {
 
 	public function __get($property) {
 		if ($property == 'accounting') {
-			if (empty($modules[$property])) {
-				$modules[$property] = new Accounting($this);
+			if (empty($this->modules[$property])) {
+				$this->modules[$property] = new Accounting($this);
 			}
-			return $modules[$property];
+			return $this->modules[$property];
 		} else {
 			return null;
 		}
