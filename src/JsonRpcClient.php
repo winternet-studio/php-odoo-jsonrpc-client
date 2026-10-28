@@ -242,6 +242,25 @@ class JsonRpcClient {
 	}
 
 	/**
+	 * @param array $args : Available keys:
+	 *  - `where` : Filter/conditions (called "domain" in Odoo terms). Eg.: `[
+	 *  	[
+	 *  		'move_type',
+	 *  		'=',    // docs: https://stackoverflow.com/questions/29442993/which-are-the-available-domain-operators-in-openerp-odoo
+	 *  		'out_invoice',
+	 *  	],
+	 *  ]`
+	*/
+	public function searchCount($model, $args = []) {
+		if (empty($args)) $args = [];
+
+		return $this->execute($model, 'search_count', [
+			(isset($args['domain']) ? $args['domain'] : @$args['where']),  //make `where` an alias for `domain`
+		]);
+		// search_count method described here https://www.odoo.com/documentation/18.0/developer/reference/external_api.html#count-records
+	}
+	
+	/**
 	 * @param array|integer $IDs : array of record IDs to read or single ID (integer) to read
 	 * @param array $fields : if set, the result will only include these fields
 	 * @param array $options : Available options:
